@@ -28,7 +28,7 @@ A Django web app that extracts text from uploaded document images and converts t
 
 1. Clone the repository
 ```bash
-   git clone https://github.com/yourusername/forma.git
+   git clone https://github.com/Buluma-Ke/forma.git
    cd forma
 ```
 
