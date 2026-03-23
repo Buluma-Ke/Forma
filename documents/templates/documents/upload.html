@@ -1,11 +1,54 @@
+{% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Forma — Extract to CSV</title>
+  <link rel="stylesheet" href="{% static 'css/upload.css' %}">
+</head>
 <body>
-  <h2>Upload a document</h2>
-  <form method="post" enctype="multipart/form-data">
+  
+<div class="logo">Amanya<span>Tech</span></div>
+<div class="grain"></div>
+
+<div class="card">
+  <div class="header">
+    <div class="title">Extract to CSV</div>
+    <div class="subtitle">Upload an image of any table or document.<br>We'll convert it to a clean CSV file.</div>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" id="uploadForm">
     {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Extract to CSV</button>
+
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('id_image').click()">
+      <div class="icon-wrap">
+        <svg fill="none" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="drop-text"><span>Click to upload</span> or drag & drop</div>
+      <div class="drop-hint">PNG · JPG · JFIF · WEBP · Max 10MB</div>
+    </div>
+
+    {{ form.image }}
+
+    <div class="file-preview" id="filePreview">
+      <div class="file-icon">
+        <svg fill="none" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span class="file-name" id="fileName">filename.png</span>
+      <button type="button" class="file-remove" onclick="removeFile()">×</button>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="btn-cancel" onclick="removeFile()">Cancel</button>
+      <button type="submit" class="btn-submit" id="submitBtn">Extract to CSV</button>
+    </div>
   </form>
+</div>
+<script src="{% static 'js/upload.js' %}"></script>
 </body>
 </html>
