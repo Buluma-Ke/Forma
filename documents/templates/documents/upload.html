@@ -8,47 +8,95 @@
   <link rel="stylesheet" href="{% static 'css/upload.css' %}">
 </head>
 <body>
-  
-<div class="logo">Amanya<span>Tech</span></div>
-<div class="grain"></div>
 
-<div class="card">
-  <div class="header">
-    <div class="title">Extract to CSV</div>
-    <div class="subtitle">Upload an image of any table or document.<br>We'll convert it to a clean CSV file.</div>
+<div class="logo">Amanya<span>Tech</span></div>
+
+<div class="layout">
+
+  <!-- LEFT: Upload card -->
+  <div class="card">
+    <div class="header">
+      <div class="title">Extract to CSV</div>
+      <div class="subtitle">Upload an image of any table or document.<br>We'll convert it to a clean CSV file.</div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" id="uploadForm">
+      {% csrf_token %}
+
+      <div class="drop-zone" id="dropZone" onclick="document.getElementById('id_image').click()">
+        <div class="icon-wrap">
+          <svg fill="none" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="drop-text"><span>Click to upload</span> or drag & drop</div>
+        <div class="drop-hint">PNG · JPG · JFIF · WEBP · Max 10MB</div>
+      </div>
+
+      {{ form.image }}
+
+      <div class="file-preview" id="filePreview">
+        <div class="file-icon">
+          <svg fill="none" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="file-name" id="fileName">filename.png</span>
+        <button type="button" class="file-remove" onclick="removeFile()">×</button>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn-cancel" onclick="removeFile()">Cancel</button>
+        <button type="submit" class="btn-submit" id="submitBtn">Extract to CSV</button>
+      </div>
+    </form>
   </div>
 
-  <form method="post" enctype="multipart/form-data" id="uploadForm">
-    {% csrf_token %}
-
-    <div class="drop-zone" id="dropZone" onclick="document.getElementById('id_image').click()">
-      <div class="icon-wrap">
-        <svg fill="none" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+  <!-- RIGHT: Preview panel -->
+  {% if table %}
+  <div class="preview-panel">
+    <div class="preview-header">
+      <div>
+        <div class="preview-title">Preview & Edit</div>
+        <div class="preview-subtitle">Click any cell to edit before downloading</div>
       </div>
-      <div class="drop-text"><span>Click to upload</span> or drag & drop</div>
-      <div class="drop-hint">PNG · JPG · JFIF · WEBP · Max 10MB</div>
+      <form method="post" action="{% url 'download' %}" id="downloadForm">
+        {% csrf_token %}
+        <button type="submit" class="btn-download">Download CSV</button>
+      </form>
     </div>
 
-    {{ form.image }}
-
-    <div class="file-preview" id="filePreview">
-      <div class="file-icon">
-        <svg fill="none" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </div>
-      <span class="file-name" id="fileName">filename.png</span>
-      <button type="button" class="file-remove" onclick="removeFile()">×</button>
+    <div class="table-wrap">
+      <table class="preview-table" id="previewTable">
+        {% for row in table %}
+        <tr>
+          {% for cell in row %}
+          <td>
+            <input type="text"
+                   name="cell_{{ forloop.parentloop.counter0 }}_{{ forloop.counter0 }}"
+                   value="{{ cell }}"
+                   form="downloadForm">
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </table>
     </div>
-
-    <div class="actions">
-      <button type="button" class="btn-cancel" onclick="removeFile()">Cancel</button>
-      <button type="submit" class="btn-submit" id="submitBtn">Extract to CSV</button>
+  </div>
+  {% else %}
+  <div class="preview-empty">
+    <div class="empty-icon">
+      <svg fill="none" stroke-width="1" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125M3.375 19.5h1.5C5.496 19.5 6 18.996 6 18.375m-3.75.125V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m0 0h17.25m0 0h1.5c.621 0 1.125-.504 1.125-1.125V5.625m-18.375 0h16.5" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor"/>
+      </svg>
     </div>
-  </form>
+    <div class="empty-text">Your table preview will appear here</div>
+    <div class="empty-hint">Upload an image to get started</div>
+  </div>
+  {% endif %}
+
 </div>
+
 <script src="{% static 'js/upload.js' %}"></script>
 </body>
 </html>
