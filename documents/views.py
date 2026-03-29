@@ -9,8 +9,12 @@ from django.shortcuts import render
 from django.http import HttpResponse
 from .models import Document
 from .forms import DocumentForm
+import google.generativeai as genai
 
 reader = easyocr.Reader(['en'])
+
+genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
+gemini_model = genai.GenerativeModel('gemini-1.5-flash')
 
 def preprocess_image(image):
     img = np.array(image.convert('RGB'))
@@ -34,7 +38,7 @@ def extract_table(img_array):
         paragraph=False,
         contrast_ths=0.1,
         adjust_contrast=0.5,
-        text_threshold=0.7,
+        text_threshold=0.85,
         low_text=0.4,
         link_threshold=0.4,
         width_ths=0.7,
@@ -43,6 +47,8 @@ def extract_table(img_array):
     rows = {}
     for (box, text, confidence) in result:
         if not text.strip():
+            continue
+        if len(text.strip()) < 2:
             continue
         top = int((box[0][1] + box[2][1]) / 2)
         left = int(box[0][0])
@@ -56,6 +62,54 @@ def extract_table(img_array):
         table.append([word for _, word in row_words])
     return table
 
+def correct_table_with_ai(table):
+    raw_text = '\n'.join([' | '.join(row) for row in table])
+
+    print('--- RAW TABLE SENT TO GEMINI ---')
+    print(raw_text)
+    print('--------------------------------')
+
+    prompt = f"""You are correcting OCR output from a scanned table.
+        The text below was extracted by OCR and may contain garbled characters, 
+        misread letters, broken words, or noise.
+
+        Rules:
+        - Correct obvious OCR errors (e.g. '0' vs 'O', '1' vs 'l', 'rn' vs 'm')
+        - Preserve the table structure — same number of rows and columns
+        - Keep numbers, codes, abbreviations and proper nouns as-is unless clearly wrong
+        - If a cell looks like pure noise (random characters), leave it empty
+        - Return ONLY the corrected table in the same pipe-separated format, nothing else
+
+        Raw OCR output:
+        {raw_text}"""
+
+    try:
+        print('--- CALLING GEMINI API ---')
+        response = gemini_model.generate_content(prompt)
+        corrected_text = response.text.strip()
+
+        print('--- GEMINI RESPONSE ---')
+        print(corrected_text)
+        print('----------------------')
+
+        corrected_table = []
+        for line in corrected_text.splitlines():
+            if line.strip():
+                corrected_table.append([
+                    cell.strip() for cell in line.split('|')
+                ])
+
+        print('--- CORRECTED TABLE ---')
+        for row in corrected_table:
+            print(row)
+        print('----------------------')
+
+        return corrected_table
+
+    except Exception as e:
+        print(f'--- GEMINI ERROR: {e} ---')
+        return table
+
 def upload(request):
     form = DocumentForm()
     if request.method == 'POST' and 'image' in request.FILES:
@@ -65,10 +119,12 @@ def upload(request):
             image = Image.open(doc.image.path)
             img_array = preprocess_image(image)
             table = extract_table(img_array)
+
+            # AI correction pass
+            table = correct_table_with_ai(table)
+
             max_cols = max(len(row) for row in table) if table else 0
             table = [row + [''] * (max_cols - len(row)) for row in table]
-
-            # Strip extension from original filename
             original_name = os.path.splitext(
                 request.FILES['image'].name
             )[0]
