@@ -477,6 +477,29 @@ input[type=file]{display:none;}
 
 .preview-table th button:hover{color:#cc3333;}
 
+.table-wrap::-webkit-scrollbar{
+  height:3px;
+  width:3px;
+}
+
+.table-wrap::-webkit-scrollbar-track{
+  background:transparent;
+}
+
+.table-wrap::-webkit-scrollbar-thumb{
+  background:#e85d2f;
+  border-radius:99px;
+}
+
+.table-wrap::-webkit-scrollbar-thumb:hover{
+  background:#d4532a;
+}
+
+.table-wrap{
+  scrollbar-width:thin;
+  scrollbar-color:#e85d2f transparent;
+}
+
 /* Mobile layout */
 @media(max-width:768px){
   body{
