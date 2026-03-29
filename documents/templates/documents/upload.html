@@ -9,6 +9,12 @@
 </head>
 <body>
 
+<!-- Loading spinner -->
+<div class="spinner-overlay" id="spinnerOverlay">
+  <div class="spinner"></div>
+  <div class="spinner-text">extracting table...</div>
+</div>
+
 <div class="logo">Amanya<span>Tech</span></div>
 
 <div class="layout">
@@ -58,12 +64,21 @@
     <div class="preview-header">
       <div>
         <div class="preview-title">Preview & Edit</div>
-        <div class="preview-subtitle">Click any cell to edit before downloading</div>
+        <div class="preview-subtitle">Click any cell to edit · changes highlighted in orange</div>
       </div>
       <form method="post" action="{% url 'download' %}" id="downloadForm">
         {% csrf_token %}
         <button type="submit" class="btn-download">Download CSV</button>
       </form>
+    </div>
+
+    <div class="table-controls">
+      <button class="btn-table" onclick="addRow()">+ row</button>
+      <button class="btn-table" onclick="addCol()">+ col</button>
+      <button class="btn-table danger" onclick="deleteFirstRow()">− first row</button>
+      <button class="btn-table danger" onclick="deleteLastRow()">− last row</button>
+      <button class="btn-table danger" onclick="deleteFirstCol()">− first col</button>
+      <button class="btn-table danger" onclick="deleteLastCol()">− last col</button>
     </div>
 
     <div class="table-wrap">
@@ -75,14 +90,17 @@
             <input type="text"
                    name="cell_{{ forloop.parentloop.counter0 }}_{{ forloop.counter0 }}"
                    value="{{ cell }}"
-                   form="downloadForm">
+                   form="downloadForm"
+                   oninput="highlightEdited(this)">
           </td>
           {% endfor %}
+          <td><button type="button" class="row-delete" onclick="deleteRow(this)">×</button></td>
         </tr>
         {% endfor %}
       </table>
     </div>
   </div>
+
   {% else %}
   <div class="preview-empty">
     <div class="empty-icon">
