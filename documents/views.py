@@ -65,18 +65,29 @@ def upload(request):
             image = Image.open(doc.image.path)
             img_array = preprocess_image(image)
             table = extract_table(img_array)
-            # Pad rows to equal length
             max_cols = max(len(row) for row in table) if table else 0
             table = [row + [''] * (max_cols - len(row)) for row in table]
+
+            # Strip extension from original filename
+            original_name = os.path.splitext(
+                request.FILES['image'].name
+            )[0]
+
             return render(request, 'documents/upload.html', {
                 'form': DocumentForm(),
                 'table': table,
                 'num_cols': max_cols,
+                'original_name': original_name,
             })
     return render(request, 'documents/upload.html', {'form': form})
 
+
 def download(request):
     if request.method == 'POST':
+        filename = request.POST.get('filename', 'forma_output').strip()
+        if not filename:
+            filename = 'forma_output'
+
         output = io.StringIO()
         writer = csv.writer(output)
         row_index = 0
@@ -93,6 +104,7 @@ def download(request):
                 break
             writer.writerow(row)
             row_index += 1
+
         response = HttpResponse(output.getvalue(), content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="forma_output.csv"'
+        response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
         return response

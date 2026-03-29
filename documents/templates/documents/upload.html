@@ -68,7 +68,15 @@
       </div>
       <form method="post" action="{% url 'download' %}" id="downloadForm">
         {% csrf_token %}
-        <button type="submit" class="btn-download">Download CSV</button>
+        <div class="filename-row">
+          <input type="text"
+                name="filename"
+                class="filename-input"
+                value="{{ original_name }}"
+                placeholder="filename">
+          <span class="filename-ext">.csv</span>
+          <button type="submit" class="btn-download">Download CSV</button>
+        </div>
       </form>
     </div>
 

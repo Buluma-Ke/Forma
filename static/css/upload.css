@@ -510,3 +510,34 @@ input[type=file]{display:none;}
     width:100%;
   }
 }
+
+
+.filename-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.filename-input{
+  background:#0d0d0d;
+  border:1px solid #1e1e1e;
+  border-radius:8px;
+  padding:8px 12px;
+  color:#f0ede8;
+  font-family:'DM Mono',monospace;
+  font-size:12px;
+  outline:none;
+  width:160px;
+  transition:border-color 0.2s;
+}
+
+.filename-input:focus{
+  border-color:#e85d2f;
+}
+
+.filename-ext{
+  font-family:'DM Mono',monospace;
+  font-size:12px;
+  color:#444;
+  margin-right:4px;
+}
