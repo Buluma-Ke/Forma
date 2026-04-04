@@ -94,6 +94,7 @@ The pipeline uses Groq's vision AI to read the table directly from the image, wi
 
 ## Project Structure
 
+```
 forma/
 ├── documents/          # Main app — models, views, forms
 │   ├── templates/
@@ -106,7 +107,7 @@ forma/
 ├── forma/              # Django project settings
 ├── requirements.txt
 └── .env                # API keys (never commit this)
-
+```
 
 ## Roadmap
 
