@@ -25,6 +25,9 @@
       <div class="title">Extract to CSV</div>
       <div class="subtitle">Upload an image of any table or document.<br>We'll convert it to a clean CSV file.</div>
     </div>
+    {% if error %}
+    <div class="error-msg">{{ error }}</div>
+    {% endif %}
 
     <form method="post" enctype="multipart/form-data" id="uploadForm">
       {% csrf_token %}
