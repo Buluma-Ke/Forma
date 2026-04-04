@@ -9,12 +9,12 @@ from django.shortcuts import render
 from django.http import HttpResponse
 from .models import Document
 from .forms import DocumentForm
-import google.generativeai as genai
+from groq import Groq
 
 reader = easyocr.Reader(['en'])
 
-genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
-gemini_model = genai.GenerativeModel('gemini-1.5-flash')
+groq_client = Groq(api_key=os.getenv('GROQ_API_KEY'))
+
 
 def preprocess_image(image):
     img = np.array(image.convert('RGB'))
@@ -62,35 +62,40 @@ def extract_table(img_array):
         table.append([word for _, word in row_words])
     return table
 
+
 def correct_table_with_ai(table):
     raw_text = '\n'.join([' | '.join(row) for row in table])
 
-    print('--- RAW TABLE SENT TO GEMINI ---')
+    print('--- RAW TABLE SENT TO GROQ ---')
     print(raw_text)
-    print('--------------------------------')
+    print('------------------------------')
 
     prompt = f"""You are correcting OCR output from a scanned table.
-        The text below was extracted by OCR and may contain garbled characters, 
-        misread letters, broken words, or noise.
+The text below was extracted by OCR and may contain garbled characters, 
+misread letters, broken words, or noise.
 
-        Rules:
-        - Correct obvious OCR errors (e.g. '0' vs 'O', '1' vs 'l', 'rn' vs 'm')
-        - Preserve the table structure — same number of rows and columns
-        - Keep numbers, codes, abbreviations and proper nouns as-is unless clearly wrong
-        - If a cell looks like pure noise (random characters), leave it empty
-        - Return ONLY the corrected table in the same pipe-separated format, nothing else
+Rules:
+- Correct obvious OCR errors (e.g. '0' vs 'O', '1' vs 'l', 'rn' vs 'm')
+- Preserve the table structure — same number of rows and columns
+- Keep numbers, codes, abbreviations and proper nouns as-is unless clearly wrong
+- If a cell looks like pure noise (random characters), leave it empty
+- Return ONLY the corrected table in the same pipe-separated format, nothing else
 
-        Raw OCR output:
-        {raw_text}"""
+Raw OCR output:
+{raw_text}"""
 
     try:
-        print('--- CALLING GEMINI API ---')
-        response = gemini_model.generate_content(prompt)
-        corrected_text = response.text.strip()
+        print('--- CALLING GROQ API ---')
+        response = groq_client.chat.completions.create(
+            model='llama-3.3-70b-versatile',
+            messages=[{'role': 'user', 'content': prompt}],
+            temperature=0.1,
+        )
+        corrected_text = response.choices[0].message.content.strip()
 
-        print('--- GEMINI RESPONSE ---')
+        print('--- GROQ RESPONSE ---')
         print(corrected_text)
-        print('----------------------')
+        print('--------------------')
 
         corrected_table = []
         for line in corrected_text.splitlines():
@@ -104,11 +109,25 @@ def correct_table_with_ai(table):
             print(row)
         print('----------------------')
 
-        return corrected_table
+        # Clean leading 'I' that are misread pipe characters
+        cleaned_table = []
+        for row in corrected_table:
+            cleaned_row = []
+            for cell in row:
+                # If cell starts with 'I ' it's likely a misread pipe
+                if cell.startswith('I '):
+                    cell = cell[2:]
+                cleaned_row.append(cell)
+            cleaned_table.append(cleaned_row)
+        return cleaned_table
+
+        
 
     except Exception as e:
-        print(f'--- GEMINI ERROR: {e} ---')
+        print(f'--- GROQ ERROR: {e} ---')
+
         return table
+
 
 def upload(request):
     form = DocumentForm()
@@ -164,3 +183,6 @@ def download(request):
         response = HttpResponse(output.getvalue(), content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
         return response
+    
+
+
